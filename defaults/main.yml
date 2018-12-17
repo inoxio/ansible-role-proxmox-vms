@@ -1,0 +1,63 @@
+---
+
+defaults:
+  # Specify emulated CPU type.
+  # 'host' uses the same cpu type as the host system
+  cpu: "host"
+
+  # A hash/dictionary of network interfaces for the VM. net='{"key":"value", "key":"value"}'.
+  # Keys allowed are - net[n] where 0 ≤ n ≤ N.
+  # Virtio was chosen to be the main platform for IO virtualization in KVM
+  # The bridge parameter can be used to automatically add the interface to a bridge device.
+  # The Proxmox VE standard bridge is called 'vmbr0'.
+  # Option rate is used to limit traffic bandwidth from and to this interface.
+  # It is specified as floating point number, unit is 'Megabytes per second'.
+  net: '{"net0":"virtio,bridge=vmbr0"}'
+
+  # Specify number of cores per socket.
+  cores: '2'
+
+  # Memory size in MB for instance.
+  memory_size: '2048'
+
+  # Specify the amount of RAM for the VM in MB. Using zero disables the balloon driver.
+  # The virtio balloon device allows KVM guests to reduce their memory size (thus relinquishing memory to the host) and
+  # to increase it back (thus taking memory from the host).
+  balloon: '1024'
+
+  # Specifies the SCSI controller model.
+  # Choices: lsi, lsi53c810, virtio-scsi-pci, virtio-scsi-single, megasas, pvscsi
+  # virtio-scsi-pci: A virtio storage interface for efficient I/O that overcomes virtio-blk limitations and
+  # supports advanced SCSI hardware.
+  scsihw: 'virtio-scsi-pci'
+
+  # A hash/dictionary of volume used as VIRTIO hard disk. virtio='{"key":"value", "key":"value"}'.
+  # Keys allowed are - virto[n] where 0 ≤ n ≤ 15.
+  # Values allowed are - "storage:size,format=value".
+  # storage is the storage identifier where to create the disk.
+  # size is the size of the disk in GB.
+  # format is the drive's backing file's data format. qcow2|raw|subvol
+  virtio: '{"virtio0":"local-lvm:10,cache=writeback,discard=on"}'
+
+  # Specifies guest operating system. This is used to enable special optimization/features for specific operating systems.
+  # The l26 is Linux 2.6/3.X Kernel.
+  # Choices: other, wxp, w2k, w2k3, w2k8, wvista, win7, win8, l24, l26, solaris
+  ostype: 'l26'
+
+  # Locale is a set of parameters that defines the user's language.
+  # This is not necessary for proxmox_kvm but for the preseed-file. This value is commited to the deploy-args file.
+  locale: 'en_US'
+
+  # Specifies whether a VM will be started during system bootup.
+  onboot: 'yes'
+
+  # Specifies the name of the file which contains the deploy arguments for the vm. The arguments in it are attached
+  # to the args variable of a vm (see 'create vms' in tasks/main.yml) and are used when installing an os on a vm.
+  deploy_args_template: 'deploy-args-ubuntu-template.j2'
+
+  # Specifies the name of the template preseed file, which will be taken if the definition of the vm in the playbook
+  # has no preseed path.
+  preseed_template: 'ubuntu-template.seed'
+
+  # Specifies the ubuntu distribution which will be installed on the vm.
+  ubuntu_distribution: 'bionic'

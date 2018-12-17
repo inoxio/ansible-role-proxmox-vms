@@ -1,0 +1,2 @@
+-kernel /tmp/{{ item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution)}}-kernel
+ -initrd /tmp/{{ item.0.key }}-initrd.gz

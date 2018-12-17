@@ -1,0 +1,34 @@
+galaxy_info:
+  author: Michael Kunze, Martin Lesser, Karl-Erik Kley
+  description: Create virtual machines with Proxmox and installs (unattended) an ubuntu distribution on it
+  company: inoxio Quality Services GmbH
+
+  license: Apache 2.0
+
+  min_ansible_version: 2.6.4
+
+  platforms:
+    - name: Debian
+      versions:
+        - all
+    - name: Ubuntu
+      versions:
+        - all
+
+  galaxy_tags:
+    - inoxio
+    - proxmox
+    - ubuntu
+    - virtual
+    - vm
+    - installation
+    - setup
+    - unattended
+    - automatic
+
+dependencies:
+  - role: geerlingguy.pip
+    pip_package: python3-pip
+    pip_install_packages:
+      - name: proxmoxer
+        version: 1.0.3

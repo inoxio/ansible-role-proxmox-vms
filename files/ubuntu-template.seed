@@ -1,0 +1,42 @@
+#
+# Preseed file for an automatic generic ubuntu installation.
+#
+# This will complete a standard full-disk installation. Everything on one
+# partition.
+#
+
+# the installation system will display only critical messages and try to do the right thing without fuss
+d-i debconf/priority                                string      critical
+
+# time-zone
+d-i time/zone                                       string      Europe/Berlin
+
+# package management
+d-i mirror/http/hostname                            string      archive.ubuntu.com
+
+# partitioning
+# crypto (instead of regular) for encryption
+d-i partman-auto/method                             string      regular
+# all files in one partition
+d-i partman-auto/choose_recipe                      select      atomic
+# automatically partition without confirmation
+d-i partman-partitioning/confirm_write_new_label    boolean     true
+d-i partman/choose_partition                        select      finish
+d-i partman/confirm                                 boolean     true
+d-i partman/confirm_nooverwrite                     boolean     true
+
+# login
+d-i passwd/root-login                               boolean     true
+d-i user-setup/allow-password-weak                  boolean     true
+d-i passwd/make-user                                boolean     false
+
+# finish installation
+# avoid that last message about the install being complete
+d-i finish-install/reboot_in_progress               note
+# comment to next line to reboot instead (but this starts the installer again!)
+d-i debian-installer/exit/poweroff                  boolean     true
+
+# late command
+d-i preseed/late_command string \
+cp /finish-installation /target/ ; \
+in-target /bin/bash /finish-installation
