@@ -211,7 +211,6 @@
 
 - name: Print success message
   debug:
-    msg: "The installation of {{ item.item.0.value.ubuntu_distribution |
-          default(defaults.ubuntu_distribution) }} on {{ item.item.0.key }} was successful!"
+    msg: "The installation of {{ distributions[item.item.0.key] }} on {{ item.item.0.key }} was successful!"
   when: item.changed
   with_items: "{{ created_vms_pve.results }}"
