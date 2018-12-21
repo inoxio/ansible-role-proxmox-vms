@@ -46,9 +46,20 @@
 - meta: flush_handlers
   when: created_vms_pve.changed
 
+- name: Set distribution fact
+  set_fact:
+    distribution: "{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}"
+  with_items: "{{ created_vms_pve.results }}"
+  register: distributions_register
+
+- name: Make a distribution list from distributions_register
+  set_fact:
+    distributions: "{{ distributions|default({}) | combine( {item.item.item.0.key: item.ansible_facts.distribution} ) }}"
+  with_items: "{{ distributions_register.results }}"
+
 - name: Create temporary directory for netboot image
   file:
-    path: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}
+    path: /tmp/{{ distributions[item.item.0.key] }}
     state: directory
     mode: 0755
   with_items: "{{ created_vms_pve.results }}"
@@ -56,40 +67,39 @@
 
 - name: Download and unpack netboot image
   unarchive:
-    src: http://archive.ubuntu.com/ubuntu/dists/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}/main/installer-amd64/current/images/netboot/netboot.tar.gz
-    dest: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}
+    src: http://archive.ubuntu.com/ubuntu/dists/{{ distributions[item.item.0.key] }}/main/installer-amd64/current/images/netboot/netboot.tar.gz
+    dest: /tmp/{{ distributions[item.item.0.key] }}
     remote_src: yes
   with_items: "{{ created_vms_pve.results }}"
   when: item.changed
 
 - name: Move linux kernel file
   copy:
-    src: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}/ubuntu-installer/amd64/linux
-    dest: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}-kernel
+    src: /tmp/{{ distributions[item.item.0.key] }}/ubuntu-installer/amd64/linux
+    dest: /tmp/{{ distributions[item.item.0.key] }}-kernel
     remote_src: yes
   with_items: "{{ created_vms_pve.results }}"
   when: item.changed
 
 - name: Create temporary directory for initrd
   file:
-    path: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}/{{ item.item.0.key }}-initrd
+    path: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd
     state: directory
     mode: 0755
   with_items: "{{ created_vms_pve.results }}"
   when: item.changed
 
 - name: Unpack initrd
-  shell: zcat /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}/ubuntu-installer/amd64/initrd.gz | cpio -id
+  shell: zcat /tmp/{{ distributions[item.item.0.key] }}/ubuntu-installer/amd64/initrd.gz | cpio -id
   args:
-    chdir: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}/{{ item.item.0.key }}-initrd
+    chdir: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd
   with_items: "{{ created_vms_pve.results }}"
   when: item.changed
 
 - name: Copy preseed file
   copy:
-    src: "{{ 'files/ubuntu-'~item.0.item.0.value.ubuntu_distribution |
-              default(defaults.ubuntu_distribution)~'.seed' if item.1.stat.exists else defaults.preseed_template }}"
-    dest: /tmp/{{ item.0.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}/{{ item.0.item.0.key }}-initrd/preseed.cfg
+    src: "{{ 'files/ubuntu-'~distributions[item.0.item.0.key]~'.seed' if item.1.stat.exists else defaults.preseed_template }}"
+    dest: /tmp/{{distributions[item.0.item.0.key]}}/{{ item.0.item.0.key }}-initrd/preseed.cfg
   with_together:
     - "{{ created_vms_pve.results }}"
     - "{{ preseed_file_exists.results }}"
@@ -98,21 +108,21 @@
 - name: Build post installation script
   template:
     src: templates/finish-installation.j2
-    dest: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}/{{ item.item.0.key }}-initrd/finish-installation
+    dest: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd/finish-installation
   with_items: "{{ created_vms_pve.results }}"
   when: item.changed
 
 - name: Repack initrd
   shell: find . | cpio --create --format='newc' | gzip > /tmp/{{ item.item.0.key }}-initrd.gz
   args:
-    chdir: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}/{{ item.item.0.key }}-initrd
+    chdir: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd
   with_items: "{{ created_vms_pve.results }}"
   when: item.changed
 
 - name: Delete temporary directory
   file:
     state: absent
-    path: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}
+    path: /tmp/{{ distributions[item.item.0.key] }}
   with_items: "{{ created_vms_pve.results }}"
   when: item.changed
 
@@ -189,7 +199,7 @@
 - name: Delete kernel
   file:
     state: absent
-    path: /tmp/{{ item.item.0.value.ubuntu_distribution | default(defaults.ubuntu_distribution) }}-kernel
+    path: /tmp/{{ distributions[item.item.0.key] }}-kernel
   with_items: "{{ created_vms_pve.results }}"
   when: item.changed
 
