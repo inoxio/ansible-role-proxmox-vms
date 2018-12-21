@@ -1,6 +1,6 @@
 ---
 
-defaults:
+proxmox_vms_defaults:
   # Specify emulated CPU type.
   # 'host' uses the same cpu type as the host system
   cpu: "host"
