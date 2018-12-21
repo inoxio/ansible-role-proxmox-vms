@@ -59,7 +59,7 @@
   register: created_vms_pve
 
 - meta: flush_handlers
-  when: created_vms_pve.changed
+  when: created_vms_pve is changed
 
 - name: Create temporary directory for netboot image
   file:
@@ -67,7 +67,7 @@
     state: directory
     mode: 0755
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Download and unpack netboot image
   unarchive:
@@ -75,7 +75,7 @@
     dest: /tmp/{{ distributions[item.item.0.key] }}
     remote_src: yes
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Move linux kernel file
   copy:
@@ -83,7 +83,7 @@
     dest: /tmp/{{ distributions[item.item.0.key] }}-kernel
     remote_src: yes
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Create temporary directory for initrd
   file:
@@ -91,14 +91,14 @@
     state: directory
     mode: 0755
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Unpack initrd
   shell: zcat /tmp/{{ distributions[item.item.0.key] }}/ubuntu-installer/amd64/initrd.gz | cpio -id
   args:
     chdir: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Copy preseed file
   copy:
@@ -107,28 +107,28 @@
   with_together:
     - "{{ created_vms_pve.results }}"
     - "{{ preseed_file_exists.results }}"
-  when: item.0.changed
+  when: item.0 is changed
 
 - name: Build post installation script
   template:
     src: templates/finish-installation.j2
     dest: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd/finish-installation
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Repack initrd
   shell: find . | cpio --create --format='newc' | gzip > /tmp/{{ item.item.0.key }}-initrd.gz
   args:
     chdir: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Delete temporary directory
   file:
     state: absent
     path: /tmp/{{ distributions[item.item.0.key] }}
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Start ubuntu setup
   proxmox_kvm:
@@ -140,10 +140,10 @@
     state: started
   with_items: "{{ created_vms_pve.results }}"
   notify: sleep
-  when: item.changed
+  when: item is changed
 
 - meta: flush_handlers
-  when: created_vms_pve.changed
+  when: created_vms_pve is changed
 
 - name: Run ubuntu setup only once
   proxmox_kvm:
@@ -154,7 +154,7 @@
     name: "{{ item.item.0.key }}"
     delete: args
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Wait for virtual machines to finish installation
   proxmox_kvm:
@@ -169,7 +169,7 @@
   until: current_vm_state.status == "stopped"
   retries: 60
   delay: 10
-  when: item.changed
+  when: item is changed
 
 - name: Restart vms
   proxmox_kvm:
@@ -180,7 +180,7 @@
     name: "{{ item.item.0.key }}"
     state: started
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Wait for virtual machines to finish rebooting
   wait_for:
@@ -190,25 +190,26 @@
     delay: 10
     timeout: 480
     msg: Timeout or polling failed.
-  when: item.changed
   with_items: "{{ created_vms_pve.results }}"
+  when: item is changed
 
 - name: Delete initrd
   file:
     state: absent
     path: /tmp/{{ item.item.0.key }}-initrd.gz
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Delete kernel
   file:
     state: absent
     path: /tmp/{{ distributions[item.item.0.key] }}-kernel
   with_items: "{{ created_vms_pve.results }}"
-  when: item.changed
+  when: item is changed
 
 - name: Print success message
   debug:
     msg: "The installation of {{ distributions[item.item.0.key] }} on {{ item.item.0.key }} was successful!"
-  when: item.changed
   with_items: "{{ created_vms_pve.results }}"
+  when: item is changed
+
