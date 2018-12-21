@@ -1,5 +1,6 @@
 ---
 
+
 - name: Check if deploy-args file exists
   local_action: stat path="{{ role_path }}/templates/deploy-args-{{ item.value.ubuntu_distribution |
     default(proxmox_vms_defaults.ubuntu_distribution) }}.j2"
@@ -142,7 +143,6 @@
   when: item is changed
 
 - meta: flush_handlers
-  when: created_vms_pve is changed
 
 - name: Run ubuntu setup only once
   proxmox_kvm:
