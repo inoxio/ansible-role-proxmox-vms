@@ -1,16 +1,19 @@
 ---
 
-
 - name: Check if deploy-args file exists
-  local_action: stat path="{{ role_path }}/templates/deploy-args-{{ item.value.ubuntu_distribution |
+  stat:
+    path: "{{ role_path }}/templates/deploy-args-{{ item.value.ubuntu_distribution |
     default(proxmox_vms_defaults.ubuntu_distribution) }}.j2"
+  delegate_to: localhost
   become: false
   with_dict: "{{ vms }}"
   register: deploy_file_exists
 
 - name: Check if preseed file exists
-  local_action: stat path="{{ role_path }}/files/ubuntu-{{ item.value.ubuntu_distribution |
+  stat:
+    path: "{{ role_path }}/files/ubuntu-{{ item.value.ubuntu_distribution |
     default(proxmox_vms_defaults.ubuntu_distribution) }}.seed"
+  delegate_to: localhost
   become: false
   with_dict: "{{ vms }}"
   register: preseed_file_exists
@@ -211,4 +214,3 @@
     msg: "The installation of {{ distributions[item.item.0.key] }} on {{ item.item.0.key }} was successful!"
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
-
