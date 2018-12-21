@@ -108,7 +108,7 @@ api_user, api_password, api_host: these are needed to log into the proxmox serve
                         E.g. copying ssh keys from aws.
         
 Example playbook
-------------
+----------------
 
 ```
 - hosts: <host_name> # see hosts file
