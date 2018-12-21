@@ -7,7 +7,6 @@ your role execution (see example playbook) and installs an ubuntu version via pr
 This role was developed based on morph027's pve-infra-poc role (https://gitlab.com/morph027/pve-infra-poc).
 
 The main.yml in the 'default' directory contains default values for the vms. 
-The 'deployments' section lists all ubuntu versions that can be installed on a vm.
 
 The main.yml of the 'tasks' directory contains all tasks to create virtual machines and to install the operating system. 
 At first the vms will be created. After that the tasks for preparing the os installations will start. 
@@ -95,8 +94,6 @@ api_user, api_password, api_host: these are needed to log into the proxmox serve
             * `node`: Specifies the name of the node on the proxmox server. Under the node the vm will be installed.
             * `ubuntu_distribution`: Specifies the ubuntu distribution which will be installed on the vm. See deployments in defaults/main.yml.
             * `locale`: Locale is a set of parameters that defines the user's language.
-            * `preseed_file`: Specifies the name of a custom preseed-file.
-            * `deploy_args_file`: Specifies the name of custom deploy-args-file.
             * `root_password`: Specifies the root password of the vm.
             * `memory_size`: Specifies the size of memory in MB for the vm.
             * `virtio`: Specifies the the hard-disk and its size to be used by the vm. See default/main.yml.
@@ -146,6 +143,7 @@ Example playbook
         <vm2_name>:
           node: <node_name>
           root_password: <encrypted root password>
+          ubuntu_distribution: 'xenial'
           memory_size: <ram_size_in_MB>
           virtio: '{"virtio0":"local-lvm:<disk_size_in_GB>,cache=writeback,discard=on"}'
           network:
@@ -161,21 +159,20 @@ Example playbook
 Add new ubuntu distribution
 ------------
 
-To add a new ubuntu distribution you have to: 
-* Add the distribution to default/main.yml in `deployments` section (including paths for kernel and initrd files).
-* You can add the deploy-args-file in templates directory. E.g. deploy-args-cosmic.j2. But this is optional.
-You have to add a path to the deploy-args-file to the vm definition in the playbook (see vm2_name in the playbook example).
-If no path is stated, the template deploy-args file will be taken.
+To add a new ubuntu distribution you have to:
+* You can add the deploy-args file in templates directory. E.g. deploy-args-cosmic.j2. But this is optional.
+The role tries to find a deploy-args file named like the given distribution name and if it can't find it the default
+preseed file will be taken.
 * You can add preseed-file in files directory. E.g. ubuntu-cosmic.seed. But this is optional.
-You have to add a path to the preseed-file to the vm definition in the playbook (see vm2_name in the playbook example).
-If no path is stated, the template preseed-file will be taken.
+The role tries to find a preseed file named like the given distribution name and if it can't find it the default
+preseed file will be taken.
 
 Deploy Arguments
 ------------
 
 The deploy-args-file delivers necessary settings for an unattended ubuntu installation.
 These settings could be delivered by the preseed-file itself, but since the deploy-args file is a jinja2 file (see 
-jinja2 documentation: http://jinja.pocoo.org/docs/2.10/) you can code which settings should be used for given 
+jinja2 documentation: http://jinja.pocoo.org/docs/2.10/) you can code which settings should be used for given
 parameters. You can also include other files. And use ansible variables to make the settings dependending on the vm
 definition. E.g. locale={{ item.value.locale }}.UTF-8. If the local is en_US, jinja2 replaces it to 
 locale=en_US.UTF-8
