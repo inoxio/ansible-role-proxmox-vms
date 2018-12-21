@@ -59,7 +59,6 @@
   register: created_vms_pve
 
 - meta: flush_handlers
-  when: created_vms_pve is changed
 
 - name: Create temporary directory for netboot image
   file:
