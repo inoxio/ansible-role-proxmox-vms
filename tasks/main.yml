@@ -104,7 +104,7 @@
 
 - name: Copy preseed file
   copy:
-    src: "{{ 'files/ubuntu-'~distributions[item.0.item.0.key]~'.seed' if item.1.stat.exists else defaults.preseed_template }}"
+    src: "{{ 'files/ubuntu-'~distributions[item.0.item.0.key]~'.seed' if item.1.stat.exists else proxmox_vms_defaults.preseed_template }}"
     dest: /tmp/{{distributions[item.0.item.0.key]}}/{{ item.0.item.0.key }}-initrd/preseed.cfg
   with_together:
     - "{{ created_vms_pve.results }}"
