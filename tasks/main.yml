@@ -1,17 +1,17 @@
 ---
 
 - name: Check if deploy-args file exists
-  shell: stat path="{{ role_path }}/templates/deploy-args-{{ item.value.ubuntu_distribution |
+  local_action: stat path="{{ role_path }}/templates/deploy-args-{{ item.value.ubuntu_distribution |
     default(proxmox_vms_defaults.ubuntu_distribution) }}.j2"
-  delegate_to: localhost
   become: false
   with_dict: "{{ vms }}"
   register: deploy_file_exists
 
+- debug: var=deploy_file_exists
+
 - name: Check if preseed file exists
-  shell: stat path="{{ role_path }}/files/ubuntu-{{ item.value.ubuntu_distribution |
+  local_action: stat path="{{ role_path }}/files/ubuntu-{{ item.value.ubuntu_distribution |
     default(proxmox_vms_defaults.ubuntu_distribution) }}.seed"
-  delegate_to: localhost
   become: false
   with_dict: "{{ vms }}"
   register: preseed_file_exists
@@ -34,7 +34,8 @@
     # Look for deploy-args-file of the vm and replace all newlines with nothing. If not found take the
     # template-file and replace all newlines with nothing (all commands in one line). See ansible filter documentation.
     args: "{{ lookup('template', 'deploy-args-'~item.0.value.ubuntu_distribution |
-              default(proxmox_vms_defaults.ubuntu_distribution)~'.j2' if item.1.stat.exists else proxmox_vms_defaults.deploy_args_template) |
+              default(proxmox_vms_defaults.ubuntu_distribution)~'.j2'
+              if item.1.stat.exists else proxmox_vms_defaults.deploy_args_template) |
               replace('\n', '') }}"
     cpu: "{{ item.0.value.cpu | default(proxmox_vms_defaults.cpu) }}"
     onboot: "{{ item.0.value.onboot | default(proxmox_vms_defaults.onboot) }}"
