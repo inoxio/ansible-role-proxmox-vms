@@ -9,6 +9,11 @@
   with_dict: "{{ vms }}"
   register: deploy_file_exists
 
+- name: Make a bool list if deploy file exists for every vm
+  set_fact:
+    deploy_file_exists_list: "{{ deploy_file_exists_list | default({}) | combine( {item.item.key: item.stat.exists} ) }}"
+  with_items: "{{ deploy_file_exists.results }}"
+
 - name: Check if preseed file exists
   stat:
     path: "{{ role_path }}/files/ubuntu-{{ item.value.ubuntu_distribution |
@@ -18,18 +23,16 @@
   with_dict: "{{ vms }}"
   register: preseed_file_exists
 
-- name: Set distribution fact
+- name: Make a bool list if preseed file exists for every vm
   set_fact:
-    distribution: "{{ item.0.value.ubuntu_distribution | default(proxmox_vms_defaults.ubuntu_distribution) }}"
-  with_together:
-    - "{{ lookup('dict', vms) }}"
-    - "{{ deploy_file_exists.results }}"
-  register: distributions_register
+    preseed_file_exists_list: "{{ preseed_file_exists_list | default({}) | combine( {item.item.key: item.stat.exists} ) }}"
+  with_items: "{{ preseed_file_exists.results }}"
 
-- name: Make a distribution list from distributions_register
+- name: Make a distribution list for shorter statements
   set_fact:
-    distributions: "{{ distributions|default({}) | combine( {item.item.0.key: item.ansible_facts.distribution} ) }}"
-  with_items: "{{ distributions_register.results }}"
+    distributions: "{{ distributions | default({}) | combine( {item.key: item.value.ubuntu_distribution |
+                    default(proxmox_vms_defaults.ubuntu_distribution)} ) }}"
+  with_items: "{{ query('dict', vms) }}"
 
 - name: Create virtual machines
   proxmox_kvm:
