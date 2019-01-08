@@ -39,27 +39,25 @@
     api_user: "{{ proxmox.api_user }}"
     api_password: "{{ proxmox.api_password }}"
     api_host: "{{ proxmox.api_host }}"
-    node: "{{ item.0.value.node }}"
-    name: "{{ item.0.key }}"
-    net: "{{ item.0.value.net | default(proxmox_vms_defaults.net) }}"
-    scsihw: "{{ item.0.value.scsihw | default(proxmox_vms_defaults.scsihw) }}"
-    virtio: "{{ item.0.value.virtio | default(proxmox_vms_defaults.virtio) }}"
-    cores: "{{ item.0.value.cores | default(proxmox_vms_defaults.cores) }}"
-    memory: "{{ item.0.value.memory_size | default(proxmox_vms_defaults.memory_size) }}"
-    balloon: "{{ item.0.value.balloon | default(proxmox_vms_defaults.balloon) }}"
+    node: "{{ item.value.node }}"
+    name: "{{ item.key }}"
+    net: "{{ item.value.net | default(proxmox_vms_defaults.net) }}"
+    scsihw: "{{ item.value.scsihw | default(proxmox_vms_defaults.scsihw) }}"
+    virtio: "{{ item.value.virtio | default(proxmox_vms_defaults.virtio) }}"
+    cores: "{{ item.value.cores | default(proxmox_vms_defaults.cores) }}"
+    memory: "{{ item.value.memory_size | default(proxmox_vms_defaults.memory_size) }}"
+    balloon: "{{ item.value.balloon | default(proxmox_vms_defaults.balloon) }}"
     vga: "qxl"
-    ostype: "{{ item.0.value.ostype | default(proxmox_vms_defaults.ostype) }}"
-    # Look for deploy-args-file of the vm and replace all newlines with nothing. If not found take the
-    # template-file and replace all newlines with nothing (all commands in one line). See ansible filter documentation.
-    args: "{{ lookup('template', 'deploy-args-'~distributions[item.0.key]~'.j2'
-              if item.1.stat.exists else proxmox_vms_defaults.deploy_args_template) |
+    ostype: "{{ item.value.ostype | default(proxmox_vms_defaults.ostype) }}"
+    # Look for deploy-args-file of the vm and remove all newlines. If not found take the
+    # template-file and remove all newlines (all commands in one line). See ansible filter documentation.
+    args: "{{ lookup('template', 'deploy-args-'~distributions[item.key]~'.j2'
+              if deploy_file_exists_list[item.key] else proxmox_vms_defaults.deploy_args_template) |
               replace('\n', '') }}"
-    cpu: "{{ item.0.value.cpu | default(proxmox_vms_defaults.cpu) }}"
-    onboot: "{{ item.0.value.onboot | default(proxmox_vms_defaults.onboot) }}"
+    cpu: "{{ item.value.cpu | default(proxmox_vms_defaults.cpu) }}"
+    onboot: "{{ item.value.onboot | default(proxmox_vms_defaults.onboot) }}"
     state: present
-  with_together:
-    - "{{ lookup('dict', vms) }}"
-    - "{{ deploy_file_exists.results }}"
+  with_dict: "{{ vms }}"
   loop_control:
     pause: 10
   notify: sleep
@@ -69,7 +67,7 @@
 
 - name: Create temporary directory for netboot image
   file:
-    path: /tmp/{{ distributions[item.item.0.key] }}
+    path: /tmp/{{ distributions[item.item.key] }}
     state: directory
     mode: 0755
   with_items: "{{ created_vms_pve.results }}"
@@ -77,62 +75,61 @@
 
 - name: Download and unpack netboot image
   unarchive:
-    src: http://archive.ubuntu.com/ubuntu/dists/{{ distributions[item.item.0.key] }}/main/installer-amd64/current/images/netboot/netboot.tar.gz
-    dest: /tmp/{{ distributions[item.item.0.key] }}
+    src: http://archive.ubuntu.com/ubuntu/dists/{{ distributions[item.item.key] }}/main/installer-amd64/current/images/netboot/netboot.tar.gz
+    dest: /tmp/{{ distributions[item.item.key] }}
     remote_src: yes
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Move linux kernel file
   copy:
-    src: /tmp/{{ distributions[item.item.0.key] }}/ubuntu-installer/amd64/linux
-    dest: /tmp/{{ distributions[item.item.0.key] }}-kernel
+    src: /tmp/{{ distributions[item.item.key] }}/ubuntu-installer/amd64/linux
+    dest: /tmp/{{ distributions[item.item.key] }}-kernel
     remote_src: yes
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Create temporary directory for initrd
   file:
-    path: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd
+    path: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd
     state: directory
     mode: 0755
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Unpack initrd
-  shell: zcat /tmp/{{ distributions[item.item.0.key] }}/ubuntu-installer/amd64/initrd.gz | cpio -id
+  shell: zcat /tmp/{{ distributions[item.item.key] }}/ubuntu-installer/amd64/initrd.gz | cpio -id
   args:
-    chdir: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd
+    chdir: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Copy preseed file
   copy:
-    src: "{{ 'files/ubuntu-'~distributions[item.0.item.0.key]~'.seed' if item.1.stat.exists else proxmox_vms_defaults.preseed_template }}"
-    dest: /tmp/{{distributions[item.0.item.0.key]}}/{{ item.0.item.0.key }}-initrd/preseed.cfg
-  with_together:
-    - "{{ created_vms_pve.results }}"
-    - "{{ preseed_file_exists.results }}"
-  when: item.0 is changed
+    src: "{{ 'files/ubuntu-'~distributions[item.item.key]~'.seed' if preseed_file_exists_list[item.item.key]
+    else proxmox_vms_defaults.preseed_template }}"
+    dest: /tmp/{{distributions[item.item.key]}}/{{ item.item.key }}-initrd/preseed.cfg
+  with_items: "{{ created_vms_pve.results }}"
+  when: item is changed
 
 - name: Build post installation script
   template:
     src: templates/finish-installation.j2
-    dest: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd/finish-installation
+    dest: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd/finish-installation
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Repack initrd
-  shell: find . | cpio --create --format='newc' | gzip > /tmp/{{ item.item.0.key }}-initrd.gz
+  shell: find . | cpio --create --format='newc' | gzip > /tmp/{{ item.item.key }}-initrd.gz
   args:
-    chdir: /tmp/{{ distributions[item.item.0.key] }}/{{ item.item.0.key }}-initrd
+    chdir: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Delete temporary directory
   file:
     state: absent
-    path: /tmp/{{ distributions[item.item.0.key] }}
+    path: /tmp/{{ distributions[item.item.key] }}
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
@@ -141,8 +138,8 @@
     api_user: "{{ proxmox.api_user }}"
     api_password: "{{ proxmox.api_password }}"
     api_host: "{{ proxmox.api_host }}"
-    node: "{{ item.item.0.value.node }}"
-    name: "{{ item.item.0.key }}"
+    node: "{{ item.item.value.node }}"
+    name: "{{ item.item.key }}"
     state: started
   with_items: "{{ created_vms_pve.results }}"
   notify: sleep
@@ -155,8 +152,8 @@
     api_user: "{{ proxmox.api_user }}"
     api_password: "{{ proxmox.api_password }}"
     api_host: "{{ proxmox.api_host }}"
-    node: "{{ item.item.0.value.node }}"
-    name: "{{ item.item.0.key }}"
+    node: "{{ item.item.value.node }}"
+    name: "{{ item.item.key }}"
     delete: args
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
@@ -166,8 +163,8 @@
     api_user: "{{ proxmox.api_user }}"
     api_password: "{{ proxmox.api_password }}"
     api_host: "{{ proxmox.api_host }}"
-    node: "{{ item.item.0.value.node }}"
-    name: "{{ item.item.0.key }}"
+    node: "{{ item.item.value.node }}"
+    name: "{{ item.item.key }}"
     state: current
   with_items: "{{ created_vms_pve.results }}"
   register: current_vm_state
@@ -181,8 +178,8 @@
     api_user: "{{ proxmox.api_user }}"
     api_password: "{{ proxmox.api_password }}"
     api_host: "{{ proxmox.api_host }}"
-    node: "{{ item.item.0.value.node }}"
-    name: "{{ item.item.0.key }}"
+    node: "{{ item.item.value.node }}"
+    name: "{{ item.item.key }}"
     state: started
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
@@ -190,7 +187,7 @@
 - name: Wait for virtual machines to finish rebooting
   wait_for:
     port: 22
-    host: "{{ item.item.0.value.network.ip }}"
+    host: "{{ item.item.value.network.ip }}"
     search_regex: OpenSSH
     delay: 10
     timeout: 480
@@ -201,19 +198,19 @@
 - name: Delete initrd
   file:
     state: absent
-    path: /tmp/{{ item.item.0.key }}-initrd.gz
+    path: /tmp/{{ item.item.key }}-initrd.gz
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Delete kernel
   file:
     state: absent
-    path: /tmp/{{ distributions[item.item.0.key] }}-kernel
+    path: /tmp/{{ distributions[item.item.key] }}-kernel
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Print success message
   debug:
-    msg: "The installation of {{ distributions[item.item.0.key] }} on {{ item.item.0.key }} was successful!"
+    msg: "The installation of {{ distributions[item.item.key] }} on {{ item.item.key }} was successful!"
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed

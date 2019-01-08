@@ -17,16 +17,16 @@ update-grub
 ## Packages
 ################################################################################
 
-apt install --assume-yes openssh-client openssh-server {% if item.item.0.value.additional_packages is defined %}\
- {{ item.item.0.value.additional_packages | join(' ')  }}
+apt install --assume-yes openssh-client openssh-server {% if item.item.value.additional_packages is defined %}\
+ {{ item.item.value.additional_packages | join(' ')  }}
 {% endif %}
 
 ################################################################################
 ## Paste Scripts from files/scripts
 ################################################################################
 
-{% if item.item.0.value.scripts is defined %}
-    {% for script in item.item.0.value.scripts %}
+{% if item.item.value.scripts is defined %}
+    {% for script in item.item.value.scripts %}
         {{ lookup('file', '../../../'+script)  }}
     {% endfor %}
 {% endif %}

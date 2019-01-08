@@ -1,35 +1,35 @@
 {% include 'kernel.j2' %}
  -append "preseed/file=/preseed.cfg
  debian-installer/allow_unauthenticated_ssl=true
- locale={{ item.0.value.locale }}.UTF-8
+ locale={{ item.value.locale }}.UTF-8
  debian/priority=critical
  vga=normal
- debian-installer/keymap={{ item.0.value.locale[:2] }}
- console-keymaps-at/keymap={{ item.0.value.locale[:2] }}
+ debian-installer/keymap={{ item.value.locale[:2] }}
+ console-keymaps-at/keymap={{ item.value.locale[:2] }}
  console-setup/ask_detect=false
- console-setup/layoutcode={{ item.0.value.locale }}
+ console-setup/layoutcode={{ item.value.locale }}
  keyboard-configuration/ask_detect=false
- keyboard-configuration/layoutcode={{ item.0.value.locale }}
+ keyboard-configuration/layoutcode={{ item.value.locale }}
  netcfg/choose_interface=auto
  localechooser/translation/warn-light=true
  localechooser/translation/warn-severe=true
- netcfg/get_hostname={{ item.0.key }}
- passwd/root-password={{ item.0.value.root_password }}
- passwd/root-password-again={{ item.0.value.root_password }}
-{% if item.0.value.network is defined %}
-{% if item.0.value.network.domainname is defined %}
- netcfg/get_domain={{ item.0.value.network.domainname }}
+ netcfg/get_hostname={{ item.key }}
+ passwd/root-password={{ item.value.root_password }}
+ passwd/root-password-again={{ item.value.root_password }}
+{% if item.value.network is defined %}
+{% if item.value.network.domainname is defined %}
+ netcfg/get_domain={{ item.value.network.domainname }}
 {% endif %}
-{% if ( item.0.value.network.ip is defined and item.0.value.network.netmask is defined ) %}
+{% if ( item.value.network.ip is defined and item.value.network.netmask is defined ) %}
  netcfg/confirm_static=true
  netcfg/disable_dhcp=true
- netcfg/get_ipaddress={{ item.0.value.network.ip }}
- netcfg/get_netmask={{ item.0.value.network.netmask }}
-{% if item.0.value.network.gateway is defined %}
- netcfg/get_gateway={{ item.0.value.network.gateway }}
+ netcfg/get_ipaddress={{ item.value.network.ip }}
+ netcfg/get_netmask={{ item.value.network.netmask }}
+{% if item.value.network.gateway is defined %}
+ netcfg/get_gateway={{ item.value.network.gateway }}
 {% endif %}
-{% if item.0.value.network.nameserver is defined %}
- netcfg/get_nameservers={{ item.0.value.network.nameserver }}
+{% if item.value.network.nameserver is defined %}
+ netcfg/get_nameservers={{ item.value.network.nameserver }}
 {% endif %}
 {% endif %}
 {% else %}
