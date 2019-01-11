@@ -11,7 +11,8 @@
 
 - name: Make a bool list if deploy file exists for every vm
   set_fact:
-    deploy_file_exists_list: "{{ deploy_file_exists_list | default({}) | combine( {item.item.key: item.stat.exists} ) }}"
+    deploy_file_exists_list: "{{ deploy_file_exists_list | default({}) |
+                              combine( {item.item.key: item.stat.exists} ) }}"
   with_items: "{{ deploy_file_exists.results }}"
 
 - name: Check if preseed file exists
@@ -25,7 +26,8 @@
 
 - name: Make a bool list if preseed file exists for every vm
   set_fact:
-    preseed_file_exists_list: "{{ preseed_file_exists_list | default({}) | combine( {item.item.key: item.stat.exists} ) }}"
+    preseed_file_exists_list: "{{ preseed_file_exists_list | default({}) |
+                                  combine( {item.item.key: item.stat.exists} ) }}"
   with_items: "{{ preseed_file_exists.results }}"
 
 - name: Make a distribution list for shorter statements
@@ -75,7 +77,8 @@
 
 - name: Download and unpack netboot image
   unarchive:
-    src: http://archive.ubuntu.com/ubuntu/dists/{{ distributions[item.item.key] }}/main/installer-amd64/current/images/netboot/netboot.tar.gz
+    src: "http://archive.ubuntu.com/ubuntu/dists/{{ distributions[item.item.key] }}/\
+          main/installer-amd64/current/images/netboot/netboot.tar.gz"
     dest: /tmp/{{ distributions[item.item.key] }}
     remote_src: yes
   with_items: "{{ created_vms_pve.results }}"
@@ -108,7 +111,7 @@
   copy:
     src: "{{ 'files/ubuntu-'~distributions[item.item.key]~'.seed' if preseed_file_exists_list[item.item.key]
     else proxmox_vms_defaults.preseed_template }}"
-    dest: /tmp/{{distributions[item.item.key]}}/{{ item.item.key }}-initrd/preseed.cfg
+    dest: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd/preseed.cfg
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
