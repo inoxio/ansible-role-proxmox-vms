@@ -1,40 +1,40 @@
-Ansible Role: Create virtual machines with Proxmox and installs (unattended) an ubuntu distribution on it
+Ansible Role: Creates virtual machines with Proxmox and installs (unattended) an ubuntu distribution on it
 =========
 
-The inoxio.proxmox_vms role creates all vms that are listed within
+The inoxio.proxmox_vms role creates all VMs that are listed within
 your role execution (see example playbook) and installs an ubuntu version via preseeding on them. 
 
 This role was developed based on morph027's pve-infra-poc role (https://gitlab.com/morph027/pve-infra-poc).
 
-The main.yml in the 'default' directory contains default values for the vms. 
+The main.yml in the 'default' directory contains default values for the VMs. 
 
 The main.yml of the 'tasks' directory contains all tasks to create virtual machines and to install the operating system. 
-At first the vms will be created. After that the tasks for preparing the os installations will start. 
-The newest netboot version of the given ubuntu version will be fetched and unzipped to get the initrd and kernel.
+At first the VMs will be created. After that the tasks for preparing the OS installations will start. 
+The newest netboot version of the given Ubuntu version will be fetched and unzipped to get the initrd and kernel.
 Then the preseed file and finish-installation-script will be moved into the initrd and packed afterwards.
 After that the installation begins and the installation-arguments will be deleted 
-(in order to start the installed os after the next reboot).
-The vms will be rebooted after finishing all installations and a success message will be displayed when reboot
-was successful (by polling the IP of the vm and searching for 'OpenSSH').
+(in order to start the installed OS after the next reboot).
+The VMs will be rebooted after finishing all installations and a success message will be displayed when reboot
+was successful (by polling the IP of the VM and searching for 'OpenSSH').
 
 Requirements
 ------------
 
-Running proxmox server.  
+Running Proxmox server.  
 
 Dependencies
 ------------
 
-geerlingguy.pip (used to install proxmoxer)
+geerlingguy.pip (used to install Proxmoxer)
 
 Role Variables
 --------------
 
-api_user, api_password, api_host: these are needed to log into the proxmox server.
+api_user, api_password, api_host: these are needed to log into the Proxmox server.
 
 * File: defaults/main.yml  
-    * `Defaults`: these variables are the standard configuration for a vm.
-        * `cpu`: Specify emulated CPU type. 'host' uses the same cpu type as the host system.
+    * `Defaults`: these variables are the standard configuration for a VM.
+        * `cpu`: Specify emulated CPU type. 'host' uses the same CPU type as the host system.
             * Default: `host`
         * `net`: A hash/dictionary of network interfaces for the VM. net='{"key":"value", "key":"value"}'.  
                  Keys allowed are - net[n] where 0 ≤ n ≤ N.  
@@ -72,40 +72,40 @@ api_user, api_password, api_host: these are needed to log into the proxmox serve
             * Default: `yes`
         * `locale`: Locale is a set of parameters that defines the user's language.
                     This is not necessary for proxmox_kvm but for the preseed-file. This value is commited to the deploy-args file.
-        * `deploy_args_template`: Specifies the name of the template file which contains the deploy arguments for the vm. The arguments in it are attached
-                                  to the args variable of a vm (see 'create vms' in tasks/main.yml) and are used when installing an os on a vm.
-                                  This file is used when the vm definition does not contain a path for a custom file.
+        * `deploy_args_template`: Specifies the name of the template file which contains the deploy arguments for the VM. The arguments in it are attached
+                                  to the args variable of a VM (see 'Create VMs' in tasks/main.yml) and are used when installing an os on a VM.
+                                  This file is used when the VM definition does not contain a path for a custom file.
         * `preseed_template`: Specifies the name of the template preseed file, which will be taken if the definition of the vm in the playbook
-                              has no preseed path. This file is used when the vm definition does not contain a path for a custom file.
-        * `ubuntu_distribution`: Specifies the ubuntu distribution which will be installed on the vm.
+                              has no preseed path. This file is used when the VM definition does not contain a path for a custom file.
+        * `ubuntu_distribution`: Specifies the Ubuntu distribution which will be installed on the VM.
     
 * File: your playbook (see example playbook)  
-    * `proxmox`: Contains login data for the proxmox server which should be encrypted. You need a file which contains  
-                 the password for the ansible vault.
+    * `proxmox`: Contains login data for the Proxmox server which should be encrypted. You need a file which contains  
+                 the password for the Ansible vault.
                  Encrypting is done by the following command on the terminal:  
                  `ansible-vault encrypt_string --vault-id <path_to_the_password_file> '<password>' --name '<variable_name>'`  
                  Example: `ansible-vault encrypt_string --vault-id ~/.ansible.secret 'some_password' --name 'api_password'`
-        * `api_user`: Specifies the user-name for the proxmox login.
-        * `api_password`: Specifies the password of a user for proxmox login.
-        * `api_host`: Specifies the host name or ip of the proxmox server.
-    * `vms`: lists all virtual machines to be installed. When some variables are not stated, the default values will be taken 
+        * `api_user`: Specifies the user-name for the Proxmox login.
+        * `api_password`: Specifies the password of a user for Proxmox login.
+        * `api_host`: Specifies the host name or ip of the Proxmox server.
+    * `vms`: Lists all virtual machines to be installed. When some variables are not stated, the default values will be taken 
              (see defaults in defaults/main.yml). 
-        * `<vm_name>`: Specifies the name of the vm.
-            * `node`: Specifies the name of the node on the proxmox server. Under the node the vm will be installed.
-            * `ubuntu_distribution`: Specifies the ubuntu distribution which will be installed on the vm. See deployments in defaults/main.yml.
+        * `<vm_name>`: Specifies the name of the VM.
+            * `node`: Specifies the name of the node on the Proxmox server. Under the node the VM will be installed.
+            * `ubuntu_distribution`: Specifies the ubuntu distribution which will be installed on the VM. See deployments in defaults/main.yml.
             * `locale`: Locale is a set of parameters that defines the user's language.
-            * `root_password`: Specifies the root password of the vm.
-            * `memory_size`: Specifies the size of memory in MB for the vm.
-            * `virtio`: Specifies the the hard-disk and its size to be used by the vm. See default/main.yml.
+            * `root_password`: Specifies the root password of the VM.
+            * `memory_size`: Specifies the size of memory in MB for the VM.
+            * `virtio`: Specifies the the hard-disk and its size to be used by the VM. See default/main.yml.
             * `network`:
-                * `ip`: Specifies the ip address of the vm.
-                * `netmask`: Specifies the netmask to be used by the vm.
-                * `gateway`: Specifies the gateway ip to be used by the vm.
-                * `nameserver`: Specifies the nameserver ips to be used by the vm.
-                * `domainname`: Specifies the domain name of the vm. 
+                * `ip`: Specifies the ip address of the VM.
+                * `netmask`: Specifies the netmask to be used by the VM.
+                * `gateway`: Specifies the gateway ip to be used by the VM.
+                * `nameserver`: Specifies the nameserver ips to be used by the VM.
+                * `domainname`: Specifies the domain name of the VM. 
             * `additional_packages`: (Optional/No Default) Contains a list of additional packages that will be installed.
             * `scripts`: (Optional/No Default) Scripts is a list of files whose content will be inserted into the finish-installation file.
-                        E.g. copying ssh keys from aws.
+                        E.g. copying ssh keys from AWS.
         
 Example playbook
 ----------------
@@ -156,10 +156,10 @@ Example playbook
 ```
 
 
-Add new ubuntu distribution
+Add new Ubuntu distribution
 ------------
 
-To add a new ubuntu distribution you have to:
+To add a new Ubuntu distribution you have the following options:
 * You can add the deploy-args file in templates directory. E.g. deploy-args-cosmic.j2. But this is optional.
 The role tries to find a deploy-args file named like the given distribution name and if it can't find it the default
 preseed file will be taken.
@@ -170,17 +170,17 @@ preseed file will be taken.
 Deploy Arguments
 ------------
 
-The deploy-args-file delivers necessary settings for an unattended ubuntu installation.
-These settings could be delivered by the preseed-file itself, but since the deploy-args file is a jinja2 file (see 
-jinja2 documentation: http://jinja.pocoo.org/docs/2.10/) you can code which settings should be used for given
-parameters. You can also include other files. And use ansible variables to make the settings dependending on the vm
-definition. E.g. locale={{ item.value.locale }}.UTF-8. If the local is en_US, jinja2 replaces it to 
+The deploy-args-file delivers necessary settings for an unattended Ubuntu installation.
+These settings could be delivered by the preseed-file itself, but since the deploy-args file is a Jinja2 file (see 
+Jinja2 documentation: http://jinja.pocoo.org/docs/2.10/) you can code which settings should be used for given
+parameters. You can also include other files. And use Ansible variables to make the settings dependending on the VM
+definition. E.g. locale={{ item.value.locale }}.UTF-8. If the local is en_US, Jinja2 replaces it to 
 locale=en_US.UTF-8
 
 Preseed File
 ------------
 
-The preseed-file contains settings for a unattended installation of an ubuntu distribution. E.g. information how the disk
+The preseed-file contains settings for a unattended installation of an Ubuntu distribution. E.g. information how the disk
 should be partitioned, which user should be created and so on. It contains a section for late-commands. These are
 commands that will be executed when the installation is done and will be executed in the installed os itself. The
 late-commands can be delivered in a shell-script.
@@ -188,6 +188,12 @@ late-commands can be delivered in a shell-script.
 Finish-installation
 ------------
 
-The finish-installation-template will be executed when the os installation is finished. It can be used for example 
-to install packages or transfer ssh-keys. The file is a jinja2 template file and will add additional packages, which
-are stated in the vm definition, and it adds scripts, which can also be stated in the vm definition.
+The finish-installation-template will be executed when the OS installation is finished. It can be used for example 
+to install packages or transfer SSH-keys. The file is a Jinja2 template file and will add additional packages, which
+are stated in the VM definition, and it adds scripts, which can also be stated in the VM definition.
+
+Testing
+------------
+
+Automatic testing this role is difficult because you need a VM with Proxmox on it which creates the VMs within the VM itself.
+Thus a hypervisor is needed which supports nested virtualization. 
