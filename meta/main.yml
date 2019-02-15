@@ -1,8 +1,8 @@
 galaxy_info:
   role_name: proxmox_vms
   author: Michael Kunze, Martin Lesser, Karl-Erik Kley
-  description: Create virtual machines with Proxmox and installs (unattended) an ubuntu distribution on it
-  company: inoxio Quality Services GmbH
+  description: Creates virtual machines with Proxmox and installs (unattended) an Ubuntu distribution on it
+  company: Inoxio Quality Services GmbH
 
   license: Apache 2.0
 
