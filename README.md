@@ -4,7 +4,7 @@ Ansible Role: Creates virtual machines with Proxmox and installs (unattended) an
 The inoxio.proxmox_vms role creates all VMs that are listed within
 your role execution (see example playbook) and installs an ubuntu version via preseeding on them. 
 
-This role was developed based on morph027's pve-infra-poc role (https://gitlab.com/morph027/pve-infra-poc).
+This role was developed based on [morph027's pve-infra-poc role](https://gitlab.com/morph027/pve-infra-poc).
 
 The main.yml in the 'default' directory contains default values for the VMs. 
 
