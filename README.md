@@ -17,6 +17,9 @@ After that the installation begins and the installation-arguments will be delete
 The VMs will be rebooted after finishing all installations and a success message will be displayed when reboot
 was successful (by polling the IP of the VM and searching for 'OpenSSH').
 
+The files for the preseed installation (netboot image, kernel and initrd) and the proxmoxer module will be copied to
+the host machine. If you want to use multiple nodes on the host machine, all nodes will get these files.
+
 Requirements
 ------------
 
