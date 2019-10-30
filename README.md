@@ -88,13 +88,13 @@ api_user, api_password, api_host: these are needed to log into the Proxmox serve
                  Encrypting is done by the following command on the terminal:  
                  `ansible-vault encrypt_string --vault-id <path_to_the_password_file> '<password>' --name '<variable_name>'`  
                  Example: `ansible-vault encrypt_string --vault-id ~/.ansible.secret 'some_password' --name 'api_password'`
-        * `api_user`: Specifies the user-name for the Proxmox login.
+        * `api_user`: Specifies the user-name for the Proxmox login. If you use Linux Pluggable Authentication Modules (PAM), you have to add @PAM to the username.
         * `api_password`: Specifies the password of a user for Proxmox login.
         * `api_host`: Specifies the host name or ip of the Proxmox server.
     * `vms`: Lists all virtual machines to be installed. When some variables are not stated, the default values will be taken 
              (see defaults in defaults/main.yml). 
         * `<vm_name>`: Specifies the name of the VM.
-            * `node`: Specifies the name of the node on the Proxmox server. Under the node the VM will be installed.
+            * `node`: Specifies the name of the node on the Proxmox server. Below the node the VM will be installed.
             * `ubuntu_distribution`: Specifies the ubuntu distribution which will be installed on the VM. See deployments in defaults/main.yml.
             * `locale`: Locale is a set of parameters that defines the user's language.
             * `root_password`: Specifies the root password of the VM.
@@ -120,7 +120,7 @@ Example playbook
   roles:
     - role: inoxio.proxmox_vms
       proxmox:
-        api_user: <encrypted user>
+        api_user: <encrypted user> (@PAM in case you use Linux PAM)
         api_password: <encrypted password>
         api_host: <encrypted host>
       vms:
