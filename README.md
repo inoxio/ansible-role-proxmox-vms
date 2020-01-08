@@ -1,8 +1,8 @@
-Ansible Role: Creates virtual machines with Proxmox and installs (unattended) an ubuntu distribution on it
+Ansible Role: Create virtual machines with Proxmox and install (unattended) Ubuntu distributions on them
 =========
 
 The inoxio.proxmox_vms role creates all VMs that are listed within
-your role execution (see example playbook) and installs an ubuntu version via preseeding on them. 
+your role execution (see example playbook) and installs Ubuntu versions via preseeding on them. You can configure which Ubuntu version shall be installed on which VM.
 
 This role was developed based on [morph027's pve-infra-poc role](https://gitlab.com/morph027/pve-infra-poc).
 
@@ -17,7 +17,7 @@ After that the installation begins and the installation-arguments will be delete
 The VMs will be rebooted after finishing all installations and a success message will be displayed when reboot
 was successful (by polling the IP of the VM and searching for 'OpenSSH').
 
-The files for the preseed installation (netboot image, kernel and initrd) and the proxmoxer module will be copied to
+The files for the preseed installation (netboot image, kernel and initrd) and the Proxmoxer module will be copied to
 the host machine. If you want to use multiple nodes on the host machine, all nodes will get these files.
 
 Requirements
@@ -36,7 +36,7 @@ Role Variables
 api_user, api_password, api_host: these are needed to log into the Proxmox server.
 
 * File: defaults/main.yml  
-    * `Defaults`: these variables are the standard configuration for a VM.
+    * `Defaults`: These variables are the standard configuration for a VM.
         * `cpu`: Specify emulated CPU type. 'host' uses the same CPU type as the host system.
             * Default: `host`
         * `net`: A hash/dictionary of network interfaces for the VM. net='{"key":"value", "key":"value"}'.  
@@ -82,7 +82,7 @@ api_user, api_password, api_host: these are needed to log into the Proxmox serve
                               has no preseed path. This file is used when the VM definition does not contain a path for a custom file.
         * `ubuntu_distribution`: Specifies the Ubuntu distribution which will be installed on the VM.
     
-* File: your playbook (see example playbook)  
+* File: Your playbook (see example playbook)  
     * `proxmox`: Contains login data for the Proxmox server which should be encrypted. You need a file which contains  
                  the password for the Ansible vault.
                  Encrypting is done by the following command on the terminal:  
