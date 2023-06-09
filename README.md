@@ -35,11 +35,11 @@ Role Variables
 
 api_user, api_password, api_host: these are needed to log into the Proxmox server.
 
-* File: defaults/main.yml  
+* File: defaults/main.yml
     * `Defaults`: These variables are the standard configuration for a VM.
         * `cpu`: Specify emulated CPU type. 'host' uses the same CPU type as the host system.
             * Default: `host`
-        * `net`: A hash/dictionary of network interfaces for the VM. net='{"key":"value", "key":"value"}'.  
+        * `net`: A hash/dictionary of network interfaces for the VM. net='{"key":"value", "key":"value"}'.
                  Keys allowed are - net[n] where 0 ≤ n ≤ N.  
                  Virtio was chosen to be the main platform for IO virtualization in KVM.  
                  The bridge parameter can be used to automatically add the interface to a bridge device.  
@@ -51,16 +51,16 @@ api_user, api_password, api_host: these are needed to log into the Proxmox serve
             * Default: `2`
         * `memory_size`: Memory size in MB for instance.
             * Default: `2048`
-        * `balloon`: Specify the amount of RAM for the VM in MB. Using zero disables the balloon driver.  
+        * `balloon`: Specify the amount of RAM for the VM in MB. Using zero disables the balloon driver.
                      The virtio balloon device allows KVM guests to reduce their memory size (thus relinquishing memory to the host) and  
                      to increase it back (thus taking memory from the host).
             * Default: `1024`
-        * `scsihw`: Specifies the SCSI controller model.  
+        * `scsihw`: Specifies the SCSI controller model.
                     Choices: lsi, lsi53c810, virtio-scsi-pci, virtio-scsi-single, megasas, pvscsi  
                     virtio-scsi-pci: A virtio storage interface for efficient I/O that overcomes virtio-blk limitations and  
                     supports advanced SCSI hardware.
             * Default: `virtio-scsi-pci`
-        * `virtio`: A hash/dictionary of volume used as VIRTIO hard disk. virtio='{"key":"value", "key":"value"}'.  
+        * `virtio`: A hash/dictionary of volume used as VIRTIO hard disk. virtio='{"key":"value", "key":"value"}'.
                     Keys allowed are - virto[n] where 0 ≤ n ≤ 15.  
                     Values allowed are - "storage:size,format=value".  
                     storage is the storage identifier where to create the disk.  
@@ -80,10 +80,13 @@ api_user, api_password, api_host: these are needed to log into the Proxmox serve
                                   This file is used when the VM definition does not contain a path for a custom file.
         * `preseed_template`: Specifies the name of the template preseed file, which will be taken if the definition of the vm in the playbook
                               has no preseed path. This file is used when the VM definition does not contain a path for a custom file.
-        * `ubuntu_distribution`: Specifies the Ubuntu distribution which will be installed on the VM.
-    
-* File: Your playbook (see example playbook)  
-    * `proxmox`: Contains login data for the Proxmox server which should be encrypted. You need a file which contains  
+        * `distribution`: Specifies the Unix distribution which will be installed on the VM.
+        * `distribution_img`: Specifies the distribution image file to download and install.
+        * `distribution_kernel_path`: Specifies the unix distribution kernel path. This is found under extracted distribution_img archive.
+        * `distribution_initrd_path`: Specifies the unix distribution initrd path. This is found under extracted distribution_img archive.
+
+* File: Your playbook (see example playbook)
+    * `proxmox`: Contains login data for the Proxmox server which should be encrypted. You need a file which contains
                  the password for the Ansible vault.
                  Encrypting is done by the following command on the terminal:  
                  `ansible-vault encrypt_string --vault-id <path_to_the_password_file> '<password>' --name '<variable_name>'`  
@@ -95,10 +98,17 @@ api_user, api_password, api_host: these are needed to log into the Proxmox serve
              (see defaults in defaults/main.yml). 
         * `<vm_name>`: Specifies the name of the VM.
             * `node`: Specifies the name of the node on the Proxmox server. Below the node the VM will be installed.
-            * `ubuntu_distribution`: Specifies the ubuntu distribution which will be installed on the VM. See deployments in defaults/main.yml.
+            * `id`: Specifies the id of the VM.
+            * `distribution`: Specifies the unix distribution which will be installed on the VM. See deployments in defaults/main.yml.
+            * `distribution_img`: Specifies the distribution image file to download and install.
+            * `distribution_kernel_path`: Specifies the unix distribution kernel path. This is found under extracted distribution_img archive.
+            * `distribution_initrd_path`: Specifies the unix distribution initrd path. This is found under extracted distribution_img archive.
             * `locale`: Locale is a set of parameters that defines the user's language.
             * `root_password`: Specifies the root password of the VM.
+            * `cores`: Specify number of cores per socket.
+            * `sockets`: Specify number of cpu sockets.
             * `memory_size`: Specifies the size of memory in MB for the VM.
+            * `baloon`: Specifies the size of the balloon memory in MB for the VM. 0 means disabled.
             * `virtio`: Specifies the the hard-disk and its size to be used by the VM. See default/main.yml.
             * `network`:
                 * `ip`: Specifies the ip address of the VM.

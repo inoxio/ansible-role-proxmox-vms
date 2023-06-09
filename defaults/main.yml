@@ -12,10 +12,13 @@ proxmox_vms_defaults:
   # The Proxmox VE standard bridge is called 'vmbr0'.
   # Option rate is used to limit traffic bandwidth from and to this interface.
   # It is specified as floating point number, unit is 'Megabytes per second'.
-  net: '{"net0":"virtio,bridge=vmbr0"}'
+  net: '{"net0":"virtio,bridge=vmbr99"}'
 
   # Specify number of cores per socket.
   cores: '2'
+
+  # Specify number of cores per socket.
+  sockets: '2'
 
   # Memory size in MB for instance.
   memory_size: '2048'
@@ -59,5 +62,17 @@ proxmox_vms_defaults:
   # has no preseed path.
   preseed_template: 'ubuntu-template.seed'
 
-  # Specifies the ubuntu distribution which will be installed on the vm.
-  ubuntu_distribution: 'bionic'
+  # Specifies the unix type which will be installed on the vm: debian, ubuntu, etc.
+  nix_type: 'ubuntu'
+
+  # Specifies the unix distribution which will be installed on the vm.
+  distribution: 'bionic'
+
+  # Specifies the distribution image file to download and install.
+  distribution_img: 'http://archive.ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/current/images/netboot/netboot.tar.gz'
+
+  # Specifies the unix distribution kernel path. This is found under extracted distribution_img archive.
+  distribution_kernel_path: '/ubuntu-installer/amd64/linux'
+
+  # Specifies the unix distribution initrd path. This is found under extracted distribution_img archive.
+  distribution_initrd_path: '/ubuntu-installer/amd64/initrd.gz'

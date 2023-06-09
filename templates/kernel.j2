@@ -1,2 +1,2 @@
--kernel /tmp/{{ distributions[item.key] }}-kernel
+-kernel /tmp/{{ nix_types[item.key] }}-{{ distributions[item.key] }}-kernel
  -initrd /tmp/{{ item.key }}-initrd.gz
