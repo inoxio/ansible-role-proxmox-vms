@@ -1,9 +1,17 @@
 ---
 
+- name: Do we destroy existing vm?
+  ansible.builtin.shell: |
+    qm stop {{ item.value.id }}
+    qm destroy {{ item.value.id }}
+  ignore_errors: true
+  with_dict: "{{ vms }}"
+
 - name: Check if deploy-args file exists
   stat:
-    path: "{{ role_path }}/templates/deploy-args-{{ item.value.ubuntu_distribution |
-    default(proxmox_vms_defaults.ubuntu_distribution) }}.j2"
+    path: "{{ role_path }}/templates/deploy-args-{{ item.value.nix_type |
+    default(proxmox_vms_defaults.nix_type) }}-{{ item.value.distribution |
+    default(proxmox_vms_defaults.distribution) }}.j2"
   delegate_to: localhost
   become: false
   with_dict: "{{ vms }}"
@@ -17,8 +25,8 @@
 
 - name: Check if preseed file exists
   stat:
-    path: "{{ role_path }}/files/ubuntu-{{ item.value.ubuntu_distribution |
-    default(proxmox_vms_defaults.ubuntu_distribution) }}.seed"
+    path: "{{ role_path }}/files/{{ item.value.nix_type }}-{{ item.value.distribution |
+    default(proxmox_vms_defaults.distribution) }}.seed"
   delegate_to: localhost
   become: false
   with_dict: "{{ vms }}"
@@ -32,8 +40,17 @@
 
 - name: Make a distribution list for shorter statements
   set_fact:
-    distributions: "{{ distributions | default({}) | combine( {item.key: item.value.ubuntu_distribution |
-                    default(proxmox_vms_defaults.ubuntu_distribution)} ) }}"
+    nix_types: "{{ nix_types | default({}) | combine( {item.key: item.value.nix_type |
+                    default(proxmox_vms_defaults.nix_type)} ) }}"
+    distributions: "{{ distributions | default({}) | combine( {item.key: item.value.distribution |
+                    default(proxmox_vms_defaults.distribution)} ) }}"
+    distributions_img: "{{ distributions_img | default({}) | combine( {item.key: item.value.distribution_img |
+                    default(proxmox_vms_defaults.distribution_img)} ) }}"
+    distributions_kernel_path: "{{ distributions_kernel_path | default({}) | combine( {item.key: item.value.distribution_kernel_path |
+                    default(proxmox_vms_defaults.distribution_kernel_path)} ) }}"
+    distributions_initrd_path: "{{ distributions_initrd_path | default({}) | combine( {item.key: item.value.distribution_initrd_path |
+                    default(proxmox_vms_defaults.distribution_initrd_path)} ) }}"
+
   with_items: "{{ query('dict', vms) }}"
 
 - name: Create virtual machines
@@ -47,17 +64,19 @@
     scsihw: "{{ item.value.scsihw | default(proxmox_vms_defaults.scsihw) }}"
     virtio: "{{ item.value.virtio | default(proxmox_vms_defaults.virtio) }}"
     cores: "{{ item.value.cores | default(proxmox_vms_defaults.cores) }}"
+    sockets: "{{ item.value.sockets | default(proxmox_vms_defaults.sockets) }}"
     memory: "{{ item.value.memory_size | default(proxmox_vms_defaults.memory_size) }}"
     balloon: "{{ item.value.balloon | default(proxmox_vms_defaults.balloon) }}"
     vga: "qxl"
     ostype: "{{ item.value.ostype | default(proxmox_vms_defaults.ostype) }}"
     # Look for deploy-args-file of the vm and remove all newlines. If not found take the
     # template-file and remove all newlines (all commands in one line). See ansible filter documentation.
-    args: "{{ lookup('template', 'deploy-args-'~distributions[item.key]~'.j2'
+    args: "{{ lookup('template', 'deploy-args-'~nix_types[item.key]~'-'~distributions[item.key]~'.j2'
               if deploy_file_exists_list[item.key] else proxmox_vms_defaults.deploy_args_template) |
               replace('\n', '') }}"
     cpu: "{{ item.value.cpu | default(proxmox_vms_defaults.cpu) }}"
     onboot: "{{ item.value.onboot | default(proxmox_vms_defaults.onboot) }}"
+    validate_certs: false
     state: present
   with_dict: "{{ vms }}"
   loop_control:
@@ -69,7 +88,7 @@
 
 - name: Create temporary directory for netboot image
   file:
-    path: /tmp/{{ distributions[item.item.key] }}
+    path: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}
     state: directory
     mode: 0755
   with_items: "{{ created_vms_pve.results }}"
@@ -77,62 +96,61 @@
 
 - name: Download and unpack netboot image
   unarchive:
-    src: "http://archive.ubuntu.com/ubuntu/dists/{{ distributions[item.item.key] }}/\
-          main/installer-amd64/current/images/netboot/netboot.tar.gz"
-    dest: /tmp/{{ distributions[item.item.key] }}
+    src: "{{ distributions_img[item.item.key] }}"
+    dest: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}
     remote_src: yes
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Move linux kernel file
   copy:
-    src: /tmp/{{ distributions[item.item.key] }}/ubuntu-installer/amd64/linux
-    dest: /tmp/{{ distributions[item.item.key] }}-kernel
+    src: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}/{{ distributions_kernel_path[item.item.key] }}
+    dest: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}-kernel
     remote_src: yes
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Create temporary directory for initrd
   file:
-    path: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd
+    path: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd
     state: directory
     mode: 0755
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Unpack initrd
-  shell: zcat /tmp/{{ distributions[item.item.key] }}/ubuntu-installer/amd64/initrd.gz | cpio -id
+  shell: zcat /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}/{{ distributions_initrd_path[item.item.key] }} | cpio -id
   args:
-    chdir: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd
+    chdir: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Copy preseed file
   copy:
-    src: "{{ 'files/ubuntu-'~distributions[item.item.key]~'.seed' if preseed_file_exists_list[item.item.key]
+    src: "{{ 'files/'~nix_types[item.item.key]~'-'~distributions[item.item.key]~'.seed' if preseed_file_exists_list[item.item.key]
     else proxmox_vms_defaults.preseed_template }}"
-    dest: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd/preseed.cfg
+    dest: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd/preseed.cfg
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Build post installation script
   template:
     src: templates/finish-installation.j2
-    dest: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd/finish-installation
+    dest: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd/finish-installation
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Repack initrd
   shell: find . | cpio --create --format='newc' | gzip > /tmp/{{ item.item.key }}-initrd.gz
   args:
-    chdir: /tmp/{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd
+    chdir: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}/{{ item.item.key }}-initrd
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Delete temporary directory
   file:
     state: absent
-    path: /tmp/{{ distributions[item.item.key] }}
+    path: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
@@ -208,12 +226,12 @@
 - name: Delete kernel
   file:
     state: absent
-    path: /tmp/{{ distributions[item.item.key] }}-kernel
+    path: /tmp/{{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }}-kernel
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
 
 - name: Print success message
   debug:
-    msg: "The installation of {{ distributions[item.item.key] }} on {{ item.item.key }} was successful!"
+    msg: "The installation of {{ nix_types[item.item.key] }}-{{ distributions[item.item.key] }} on {{ item.item.key }} was successful!"
   with_items: "{{ created_vms_pve.results }}"
   when: item is changed
